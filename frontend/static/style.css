@@ -1,0 +1,349 @@
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f0f2f5;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+h1 {
+    color: #1a73e8;
+    margin-bottom: 30px;
+    text-align: center;
+    font-size: 28px;
+}
+
+h2 {
+    color: #444;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 22px;
+    border-bottom: 2px solid #eaeaea;
+    padding-bottom: 10px;
+}
+
+.section {
+    margin-bottom: 40px;
+    padding: 25px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    background: #fafafa;
+}
+
+.upload-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #555;
+}
+
+input[type="file"], input[type="number"], select {
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+input[type="file"] {
+    padding: 8px;
+}
+
+input[type="number"] {
+    width: 100px;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #1a73e8;
+}
+
+.period-inputs {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+button {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background-color: #1a73e8;
+    color: white;
+    align-self: flex-start;
+}
+
+.btn-primary:hover {
+    background-color: #0d62d9;
+    transform: translateY(-2px);
+}
+
+.btn-delete {
+    background-color: #dc3545;
+    color: white;
+    padding: 10px 20px;
+    font-size: 14px;
+    margin-left: 10px;
+}
+
+.btn-delete:hover {
+    background-color: #c82333;
+}
+
+.btn-log {
+    display: inline-block;
+    padding: 12px 24px;
+    background-color: #28a745;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 600;
+    margin-right: 15px;
+    transition: all 0.3s;
+}
+
+.btn-log:hover {
+    background-color: #218838;
+    transform: translateY(-2px);
+}
+
+.status-message {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 6px;
+}
+
+.success {
+    color: #155724;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+}
+
+.error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+}
+
+.loading {
+    color: #856404;
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+}
+
+.file-item {
+    padding: 20px;
+    margin-bottom: 15px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.file-item:hover {
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.file-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.file-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.file-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat {
+    padding: 8px 0;
+}
+
+.stat-label {
+    font-weight: 600;
+    color: #666;
+    margin-right: 8px;
+}
+
+.stat-value {
+    color: #333;
+}
+
+.no-files {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 30px;
+}
+
+.logs-links {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+/* Стили для списка бэкапов */
+.backups-section {
+    margin-top: 20px;
+    border-top: 1px solid #eaeaea;
+    padding-top: 15px;
+}
+
+.btn-toggle {
+    background: none;
+    border: 1px solid #1a73e8;
+    color: #1a73e8;
+    padding: 10px 20px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-toggle:hover {
+    background-color: #1a73e8;
+    color: white;
+}
+
+.btn-toggle.active {
+    background-color: #1a73e8;
+    color: white;
+}
+
+.toggle-icon {
+    font-size: 12px;
+    transition: transform 0.3s;
+}
+
+.backup-list {
+    margin-top: 15px;
+    overflow-x: auto;
+}
+
+.backup-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.backup-table th {
+    background-color: #f8f9fa;
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    color: #495057;
+}
+
+.backup-table td {
+    padding: 12px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.backup-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.btn-download {
+    display: inline-block;
+    padding: 6px 12px;
+    background-color: #17a2b8;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 13px;
+    transition: all 0.3s;
+}
+
+.btn-download:hover {
+    background-color: #138496;
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    .section {
+        padding: 20px;
+    }
+
+    .file-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .logs-links {
+        flex-direction: column;
+    }
+
+    .backup-table {
+        font-size: 12px;
+    }
+
+    .backup-table th,
+    .backup-table td {
+        padding: 8px;
+    }
+
+    .file-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .btn-delete {
+        margin-left: 0;
+    }
+}
+
+.period-help {
+    margin-top: 5px;
+    color: #666;
+    font-size: 14px;
+}
+
+.period-help small {
+    display: block;
+    margin-top: 5px;
+    padding: 5px 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border-left: 3px solid #1a73e8;
+}

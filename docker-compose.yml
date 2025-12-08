@@ -1,0 +1,50 @@
+services:
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./backups:/app/backups
+      - ./data:/app/data
+      - ./logs:/app/logs
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./logs:/usr/share/nginx/html/logs
+
+  worker:
+    build: ./worker
+    depends_on:
+      - backend
+    volumes:
+      - ./uploads:/app/uploads
+      - ./backups:/app/backups
+      - ./data:/app/data
+      - ./logs:/app/logs
+
+  logger:
+    build: ./logger
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - backend
+      - worker
+
+  stats:
+    build: ./stats
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./uploads:/app/uploads       # Монтируем uploads
+      - ./backups:/app/backups       # Монтируем backups
+      - ./data:/app/data             # Монтируем data (с files.json)
+      - ./logs:/app/logs             # Монтируем логи
+    depends_on:
+      - backend

@@ -1,0 +1,18 @@
+🚀 Быстрый старт
+1. Инициализация Docker Swarm
+bash
+docker swarm init
+После выполнения команды вы получите токен для присоединения worker-нод.
+
+2. Сборка Docker образов
+bash
+# Сборка всех сервисов
+docker build -t backend:latest ./backend
+docker build -t worker:latest ./worker
+docker build -t frontend:latest ./frontend
+docker build -t logger:latest ./logger
+docker build -t stats:latest ./stats  # Новый сервис!
+3. Деплой стека
+bash
+# Развертывание всего приложения
+docker stack deploy -c docker-stack.yml app

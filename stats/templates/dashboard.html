@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Статистика платформы бэкапов</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Arial, sans-serif;
+    }
+
+    body {
+        background-color: #f0f2f5;
+        color: #333;
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #eaeaea;
+    }
+
+    .header h1 {
+        color: #1a73e8;
+        font-size: 28px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .header .logo {
+        font-size: 36px;
+    }
+
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .card {
+        background: #fafafa;
+        border-radius: 10px;
+        padding: 25px;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s;
+    }
+
+    .card:hover {
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+
+    .card-primary {
+        border-top: 5px solid #28a745;
+    }
+
+    .card-warning {
+        border-top: 5px solid #ffc107;
+    }
+
+    .card-danger {
+        border-top: 5px solid #dc3545;
+    }
+
+    .card-info {
+        border-top: 5px solid #17a2b8;
+    }
+
+    .card h3 {
+        color: #666;
+        font-size: 14px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+        font-weight: 600;
+    }
+
+    .card .value {
+        font-size: 32px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .card .subtitle {
+        font-size: 12px;
+        color: #888;
+        margin-top: 5px;
+    }
+
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+        margin-bottom: 25px;
+    }
+
+    @media (max-width: 1200px) {
+        .charts-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .chart-container {
+        background: #fafafa;
+        border-radius: 10px;
+        padding: 25px;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s;
+    }
+
+    .chart-container:hover {
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .chart-header h2 {
+        color: #444;
+        font-size: 22px;
+        font-weight: 600;
+        margin: 0;
+        padding: 0;
+        border-bottom: none;
+    }
+
+    .time-selector {
+        display: flex;
+        gap: 5px;
+    }
+
+    .time-selector button {
+        background: none;
+        border: 1px solid #1a73e8;
+        color: #1a73e8;
+        padding: 8px 15px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+
+    .time-selector button:hover {
+        background-color: #1a73e8;
+        color: white;
+    }
+
+    .time-selector button.active {
+        background-color: #1a73e8;
+        color: white;
+    }
+
+    .chart-wrapper {
+        position: relative;
+        height: 300px;
+    }
+
+    .realtime-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 25px;
+    }
+
+    @media (max-width: 900px) {
+        .realtime-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .realtime-stats,
+    .top-files {
+        background: #fafafa;
+        border-radius: 10px;
+        padding: 25px;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s;
+    }
+
+    .realtime-stats:hover,
+    .top-files:hover {
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    .realtime-stats h2,
+    .top-files h2 {
+        color: #444;
+        font-size: 22px;
+        margin: 0 0 20px 0;
+        padding: 0;
+        border-bottom: none;
+    }
+
+    .stat-row,
+    .file-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .stat-row:last-child,
+    .file-row:last-child {
+        border-bottom: none;
+    }
+
+    .stat-label {
+        color: #666;
+        font-weight: 600;
+    }
+
+    .stat-value {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .file-name {
+        flex: 1;
+        color: #333;
+    }
+
+    .file-count {
+        background-color: #17a2b8;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .footer {
+        text-align: center;
+        color: #666;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #eaeaea;
+        font-size: 14px;
+    }
+
+    .refresh-btn {
+        background-color: #1a73e8;
+        color: white;
+        border: none;
+        padding: 14px 28px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+    }
+
+    .refresh-btn:hover {
+        background-color: #0d62d9;
+        transform: translateY(-2px);
+    }
+
+    .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+
+    .status-online {
+        background: #28a745;
+    }
+
+    .status-offline {
+        background: #dc3545;
+    }
+
+    @media (max-width: 768px) {
+        body {
+            padding: 10px;
+        }
+
+        .container {
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .header {
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .refresh-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .chart-header {
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .time-selector {
+            width: 100%;
+        }
+
+        .time-selector button {
+            flex: 1;
+        }
+    }
+
+    canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div>
+            <h1><span class="logo">📊</span> Статистика платформы резервного копирования</h1>
+        </div>
+        <button class="refresh-btn" onclick="loadAllData()">
+            🔄 Обновить <span id="lastUpdate">Только что</span>
+        </button>
+    </div>
+
+    <!-- Карточки -->
+    <div class="stats-cards" id="overviewCards"></div>
+
+    <!-- Графики -->
+    <div class="charts-grid">
+        <div class="chart-container">
+            <div class="chart-header">
+                <h2>📈 Активность по дням</h2>
+                <div class="time-selector">
+                    <button class="active" onclick="setDailyChartRange(7)">7 дней</button>
+                    <button onclick="setDailyChartRange(30)">30 дней</button>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="dailyChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-container">
+            <div class="chart-header">
+                <h2>⏰ Активность по часам</h2>
+                <div class="time-selector">
+                    <button class="active" onclick="setHourlyChartRange(24)">24 часа</button>
+                    <button onclick="setHourlyChartRange(48)">48 часов</button>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="hourlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time + топ файлов -->
+    <div class="realtime-grid">
+        <div class="realtime-stats">
+            <h2 style="margin-bottom:20px;">⚡ Прямо сейчас</h2>
+            <div id="realtimeStats"></div>
+        </div>
+        <div class="top-files">
+            <h2 style="margin-bottom:20px;">🏆 Топ файлов</h2>
+            <div id="topFiles"></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Статистика обновляется каждые 10 секунд</p>
+    </div>
+</div>
+
+<script>
+let dailyChart=null, hourlyChart=null, dailyChartRange=7, hourlyChartRange=24;
+
+const colors = {primary:'#667eea', success:'#4CAF50', warning:'#FF9800', danger:'#F44336', info:'#2196F3'};
+
+function formatNumber(n){return n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'k':n;}
+
+async function loadOverview(){
+    try{
+        const res = await fetch('/api/stats/overview');
+        const data = await res.json();
+        document.getElementById('overviewCards').innerHTML=`
+            <div class="card card-primary"><h3>Всего бэкапов</h3><div class="value">${formatNumber(data.total_backups)}</div><div class="subtitle">Сегодня: ${data.today_backups}</div></div>
+            <div class="card card-info"><h3>Загружено файлов</h3><div class="value">${formatNumber(data.total_files)}</div><div class="subtitle">Сегодня: ${data.today_files}</div></div>
+            <div class="card card-warning"><h3>Активных файлов</h3><div class="value">${data.active_files}</div><div class="subtitle">Под наблюдением</div></div>
+            <div class="card card-info"><h3>Статус</h3><div class="value"><span class="status-indicator status-online"></span>ONLINE</div><div class="subtitle">Последний бэкап: ${new Date(data.last_backup).toLocaleTimeString()}</div></div>
+        `;
+    }catch(e){console.error(e);}
+}
+
+async function loadDailyChart(){
+    const res = await fetch(`/api/stats/daily?days=${dailyChartRange}`);
+    const data = await res.json();
+    if(dailyChart) dailyChart.destroy();
+    const ctx=document.getElementById('dailyChart').getContext('2d');
+    dailyChart=new Chart(ctx,{type:'line',data:{labels:data.labels,datasets:[
+        {label:'Бэкапы',data:data.backups,borderColor:colors.success,backgroundColor:colors.success+'20',fill:true,tension:0.4,borderWidth:3},
+        {label:'Загрузки файлов',data:data.uploads,borderColor:colors.primary,backgroundColor:colors.primary+'20',fill:true,tension:0.4,borderWidth:3},
+        {label:'Ошибки',data:data.errors,borderColor:colors.danger,backgroundColor:colors.danger+'20',fill:true,tension:0.4,borderWidth:3}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.05)'}},x:{grid:{display:false}}}}});
+}
+
+async function loadHourlyChart(){
+    const res=await fetch(`/api/stats/hourly?hours=${hourlyChartRange}`);
+    const data=await res.json();
+    if(hourlyChart) hourlyChart.destroy();
+    const ctx=document.getElementById('hourlyChart').getContext('2d');
+    hourlyChart=new Chart(ctx,{type:'bar',data:{labels:data.labels,datasets:[
+        {label:'Бэкапы',data:data.backups,backgroundColor:colors.success+'80',borderColor:colors.success,borderWidth:1},
+        {label:'Загрузки файлов',data:data.uploads,backgroundColor:colors.primary+'80',borderColor:colors.primary,borderWidth:1}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.05)'}},x:{grid:{display:false}}}}});
+}
+
+async function loadRealtimeStats(){
+    const res=await fetch('/api/stats/realtime');
+    const data=await res.json();
+    const html=`
+        <div class="stat-row"><span class="stat-label">Время обновления</span><span class="stat-value">${data.timestamp}</span></div>
+        <div class="stat-row"><span class="stat-label">Активных бэкапов</span><span class="stat-value">${data.active_backups}</span></div>
+        <div class="stat-row"><span class="stat-label">Задач в очереди</span><span class="stat-value">${data.queue_size}</span></div>
+    `;
+    document.getElementById('realtimeStats').innerHTML=html;
+}
+
+async function loadTopFiles(){
+    const res=await fetch('/api/stats/top-files');
+    const data=await res.json();
+    let html='';
+    data.forEach((file,i)=>{html+=`<div class="file-row"><div class="file-name"><strong>${i+1}.</strong> ${file.filename}<div style="font-size:11px;color:#888;">Последний: ${new Date(file.last_backup).toLocaleTimeString()}</div></div><div class="file-count">${file.backups}</div></div>`});
+    document.getElementById('topFiles').innerHTML=html;
+}
+
+function setDailyChartRange(d){dailyChartRange=d; loadDailyChart();}
+function setHourlyChartRange(h){hourlyChartRange=h; loadHourlyChart();}
+function updateLastUpdate(){document.getElementById('lastUpdate').textContent=`Обновлено: ${new Date().toLocaleTimeString()}`;}
+
+async function loadAllData(){await Promise.all([loadOverview(),loadDailyChart(),loadHourlyChart(),loadRealtimeStats(),loadTopFiles()]); updateLastUpdate();}
+
+document.addEventListener('DOMContentLoaded',()=>{loadAllData(); setInterval(loadAllData,10000);});
+</script>
+</body>
+</html>

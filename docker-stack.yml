@@ -1,0 +1,98 @@
+version: "3.9"
+
+services:
+
+  backend:
+    image: backend:latest
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    networks:
+      - app-net
+    volumes:
+      - ./uploads:/app/uploads
+      - ./backups:/app/backups
+      - ./data:/app/data
+      - ./logs:/app/logs
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "0.8"
+          memory: 1024M
+
+  worker:
+    image: worker:latest
+    depends_on:
+      - backend
+    networks:
+      - app-net
+    volumes:
+      - ./uploads:/app/uploads
+      - ./backups:/app/backups
+      - ./data:/app/data
+      - ./logs:/app/logs
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  frontend:
+    image: frontend:latest
+    ports:
+      - "80:80"
+    networks:
+      - app-net
+    volumes:
+      - ./logs:/usr/share/nginx/html/logs
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: 256M
+
+  logger:
+    image: logger:latest
+    ports:
+      - "5000:5000"
+    networks:
+      - app-net
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - backend
+      - worker
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  stats:
+    image: stats:latest
+    ports:
+      - "8002:8002"
+    networks:
+      - app-net
+    volumes:
+      - ./uploads:/app/uploads
+      - ./backups:/app/backups
+      - ./data:/app/data
+      - ./logs:/app/logs
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+networks:
+  app-net:
+    driver: overlay
