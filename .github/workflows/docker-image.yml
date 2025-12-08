@@ -1,0 +1,42 @@
+# .github/workflows/monitor.yml
+name: Monitor Services
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Каждые 5 минут
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check service health
+        run: |
+          if [[ -n "${{ secrets.SSH_PRIVATE_KEY }}" && \
+                -n "${{ secrets.SSH_HOST }}" && \
+                -n "${{ secrets.SSH_USER }}" ]]; then
+            ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
+              # Проверяем статус сервисов
+              echo '=== Docker Services Status ==='
+              docker service ls
+              
+              echo '\n=== Checking Backend ==='
+              if curl -s -f http://localhost:8000/health > /dev/null; then
+                echo '✅ Backend is healthy'
+              else
+                echo '❌ Backend is down!'
+                exit 1
+              fi
+              
+              echo '\n=== Checking Frontend ==='
+              if curl -s -f http://localhost:80 > /dev/null; then
+                echo '✅ Frontend is responding'
+              else
+                echo '❌ Frontend is down!'
+                exit 1
+              fi
+            "
+          else
+            echo 'SSH credentials not configured, skipping remote check'
+          fi
