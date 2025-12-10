@@ -1,140 +1,87 @@
-# .github/workflows/simple-deploy.yml
-name: Simple Build and Deploy
+name: CI/CD
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main]
   workflow_dispatch:
 
 env:
-  # Фиксируем имя репозитория в нижнем регистре
-  IMAGE_PREFIX: movi2752/course-work
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
+  IMAGE_TAG: ${{ github.sha }}
+  SERVICES: "backend frontend worker logger stats"
 
 jobs:
-  build-and-push:
+  build_and_push:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: read
+      packages: write  # позволяет пушить образы в GHCR
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Log in to GHCR
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push all services
+      - name: Build and push images
         run: |
-          # Список всех сервисов
-          services=("backend" "worker" "frontend" "logger" "stats")
-          
-          for service in "${services[@]}"; do
-            echo "Building $service..."
+          set -e
+          for svc in $SERVICES; do
             docker buildx build \
-              --platform linux/amd64,linux/arm64 \
-              -t ghcr.io/${{ env.IMAGE_PREFIX }}/${service}:latest \
-              -t ghcr.io/${{ env.IMAGE_PREFIX }}/${service}:${{ github.sha }} \
+              --platform linux/amd64 \
+              --tag $REGISTRY/course_${svc}:$IMAGE_TAG \
+              --tag $REGISTRY/course_${svc}:latest \
               --push \
-              ./${service}
+              $svc
           done
 
   deploy:
+    needs: build_and_push
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: build-and-push
-    
     steps:
-      - name: Deploy using SSH
-        uses: appleboy/ssh-action@v1.0.0
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy stack file to swarm manager
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: "docker-stack.yml"
+          target: "~/deploy/"
+
+      - name: Deploy stack on swarm manager
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
           script: |
-            # Login to GHCR
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
-              -u "${{ github.actor }}" \
-              --password-stdin
-            
-            # Create or update docker-stack.yml
-            cat > /opt/app/docker-stack.yml << 'EOF'
-            version: "3.9"
-            services:
-              backend:
-                image: ghcr.io/${{ env.IMAGE_PREFIX }}/backend:latest
-                ports: ["8000:8000"]
-                networks: ["app-net"]
-                volumes:
-                  - /opt/app/uploads:/app/uploads
-                  - /opt/app/backups:/app/backups
-                  - /opt/app/data:/app/data
-                  - /opt/app/logs:/app/logs
-                deploy:
-                  replicas: 3
-                  restart_policy: {condition: on-failure}
-                  resources:
-                    limits: {cpus: "0.8", memory: 1024M}
+            set -e
+            REGISTRY="$REGISTRY"
+            TAG="$IMAGE_TAG"
+            SERVICES="$SERVICES"
 
-              worker:
-                image: ghcr.io/${{ env.IMAGE_PREFIX }}/worker:latest
-                networks: ["app-net"]
-                volumes:
-                  - /opt/app/uploads:/app/uploads
-                  - /opt/app/backups:/app/backups
-                  - /opt/app/data:/app/data
-                  - /opt/app/logs:/app/logs
-                deploy:
-                  replicas: 2
-                  restart_policy: {condition: on-failure}
-                  resources:
-                    limits: {cpus: "0.5", memory: 512M}
+            # Авторизация в GHCR
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
 
-              frontend:
-                image: ghcr.io/${{ env.IMAGE_PREFIX }}/frontend:latest
-                ports: ["80:80"]
-                networks: ["app-net"]
-                volumes: ["/opt/app/logs:/usr/share/nginx/html/logs"]
-                deploy:
-                  replicas: 2
-                  restart_policy: {condition: on-failure}
-                  resources:
-                    limits: {cpus: "0.3", memory: 256M}
+            # Подтянуть свежие образы и промаркировать под локальные имена из stack-файла
+            for svc in $SERVICES; do
+              docker pull $REGISTRY/course_${svc}:$TAG
+              docker tag  $REGISTRY/course_${svc}:$TAG course_${svc}:latest
+            done
 
-              logger:
-                image: ghcr.io/${{ env.IMAGE_PREFIX }}/logger:latest
-                ports: ["5000:5000"]
-                networks: ["app-net"]
-                volumes: ["/opt/app/logs:/app/logs"]
-                deploy:
-                  replicas: 1
-                  restart_policy: {condition: on-failure}
+            # Деплой стека (docker swarm init должен быть выполнен заранее)
+            docker stack deploy -c ~/deploy/docker-stack.yml courseapp
 
-              stats:
-                image: ghcr.io/${{ env.IMAGE_PREFIX }}/stats:latest
-                ports: ["8002:8002"]
-                networks: ["app-net"]
-                volumes:
-                  - /opt/app/uploads:/app/uploads
-                  - /opt/app/backups:/app/backups
-                  - /opt/app/data:/app/data
-                  - /opt/app/logs:/app/logs
-                deploy:
-                  replicas: 1
-                  restart_policy: {condition: on-failure}
-
-            networks:
-              app-net:
-                driver: overlay
-            EOF
-            
-            # Deploy stack
-            cd /opt/app
-            docker stack deploy -c docker-stack.yml app --with-registry-auth
-            
-            # Check status
-            sleep 20
-            docker service ls
